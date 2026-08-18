@@ -1,0 +1,18 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.gridweatherreporter.app
+productName: GRID Weather Reporter
+files:
+  - filter:
+      - '**/*'
+      - '!tests/**'
+      - '!dist/**'
+      - '!*.log'
+      - '!package-lock.json'
+win:
+  target:
+    - portable
+  icon: build/icon.png
+  artifactName: GRID-Weather-Reporter-${version}.${ext}
+electronVersion: 43.4.0
