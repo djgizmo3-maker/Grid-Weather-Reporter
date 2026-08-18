@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GRID Weather Reporter</title>
+    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+    <link rel="shortcut icon" type="image/svg+xml" href="./logo.svg" />
+    <link rel="apple-touch-icon" href="./logo.svg" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar-row">
+          <div class="brand-wrap" aria-label="GRID Weather Reporter brand">
+            <div class="brand-mark" aria-hidden="true">
+              <span class="brand-clouds"></span>
+              <span class="brand-map"></span>
+              <span class="brand-pin"></span>
+            </div>
+            <div>
+              <p class="eyebrow">Current Conditions</p>
+              <h1>GRID Weather Reporter</h1>
+            </div>
+          </div>
+          <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle light and dark mode">
+            Dark Mode
+          </button>
+        </div>
+      </header>
+
+      <main class="card">
+        <form id="weather-form" class="weather-form">
+          <label for="location-input" class="field-label">Location</label>
+          <input
+            id="location-input"
+            type="text"
+            placeholder="Example: 35.1,-117.9 or Phoenix, AZ"
+            aria-label="Location"
+          />
+
+          <div class="quick-picks" aria-label="Location examples">
+            <button type="button" class="chip" data-example="35.1,-117.9">Grid Coordinates</button>
+            <button type="button" class="chip" data-example="Phoenix, AZ">City, State</button>
+            <button type="button" class="chip" data-example="Denver, CO">Example City</button>
+          </div>
+
+          <button type="submit" class="primary-btn">Generate Report</button>
+        </form>
+
+        <section class="report-panel" aria-live="polite">
+          <div class="status-row">
+            <span class="status-dot"></span>
+            <span id="status-text">Ready to generate a weather report.</span>
+          </div>
+
+          <h2>Weather Report</h2>
+          <div id="report-output" class="report-output empty">
+            Enter a location to generate a current weather condition report.
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="app-watermark-wrap" aria-label="Application copyright and version information">
+      <div class="app-watermark" aria-label="Intellectual property notice">
+        Intellectual Property of Stephen Baty
+      </div>
+      <div class="app-version" aria-label="Application version">Version 1.0.0</div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
