@@ -1,4 +1,4 @@
-import { generateWeatherNarrative, normalizeLocation } from './src/report-generator.js';
+import { generateWeatherNarrative, getEnvironment, normalizeLocation } from './src/report-generator.js';
 
 const form = document.querySelector('#weather-form');
 const locationInput = document.querySelector('#location-input');
@@ -6,6 +6,19 @@ const reportOutput = document.querySelector('#report-output');
 const statusText = document.querySelector('#status-text');
 const quickPickButtons = document.querySelectorAll('.chip');
 const themeToggle = document.querySelector('#theme-toggle');
+
+const US_STATES = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California',
+  CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland',
+  MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota', MS: 'Mississippi', MO: 'Missouri',
+  MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey',
+  NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio',
+  OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island', SC: 'South Carolina',
+  SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming'
+};
 
 function applyTheme(mode) {
   const shouldUseLight = mode === 'light';
@@ -86,32 +99,6 @@ function mapWeatherCode(code) {
   return mapping[code] || 'clear conditions';
 }
 
-function detectEnvironment(latitude, temperatureC, humidity, conditionsSummary) {
-  const normalized = (conditionsSummary || '').toLowerCase();
-
-  if (normalized.includes('rain') || normalized.includes('storm') || normalized.includes('snow')) {
-    return 'wet';
-  }
-
-  if (typeof latitude === 'number' && latitude >= 25 && latitude <= 40 && humidity >= 45) {
-    return 'humid';
-  }
-
-  if (temperatureC >= 30 && humidity <= 35) {
-    return 'desert';
-  }
-
-  if (humidity >= 55 && temperatureC >= 24) {
-    return 'humid';
-  }
-
-  if (temperatureC <= 5) {
-    return 'cold';
-  }
-
-  return 'general';
-}
-
 async function geocodeCityState(location) {
   const query = encodeURIComponent(location.city);
   const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${query}&count=10&language=en&format=json`);
@@ -123,8 +110,12 @@ async function geocodeCityState(location) {
   const data = await response.json();
   const matches = data.results || [];
 
+  const targetState = (location.state || '').toUpperCase();
+  const fullStateName = US_STATES[targetState] || location.state || '';
+
   const exactMatch = matches.find((item) => {
-    const adminMatch = (item.admin1 || '').toLowerCase() === (location.state || '').toLowerCase();
+    const admin = (item.admin1 || '').toLowerCase();
+    const adminMatch = admin === targetState.toLowerCase() || (fullStateName && admin === fullStateName.toLowerCase());
     const nameMatch = (item.name || '').toLowerCase() === location.city.toLowerCase();
     return nameMatch && adminMatch;
   });
@@ -159,7 +150,7 @@ async function fetchWeatherForLocation(location) {
     displayName = `${geoLocation.name}, ${geoLocation.admin1 || geoLocation.country || 'Location'}`;
   }
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,visibility&daily=temperature_2m_min,temperature_2m_max&timezone=auto&forecast_days=1`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_direction_10m,visibility,precipitation&daily=temperature_2m_min,temperature_2m_max&timezone=auto&forecast_days=1`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -178,6 +169,7 @@ async function fetchWeatherForLocation(location) {
   const windDirection = Number(current.wind_direction_10m ?? 0);
   const visibilityKm = Number((current.visibility ?? 0) / 1000);
   const rainChance = Number(current.precipitation ?? 0);
+  const conditionsSummary = mapWeatherCode(Number(current.weather_code ?? 0));
 
   return {
     location: displayName,
@@ -191,10 +183,10 @@ async function fetchWeatherForLocation(location) {
     highC: high,
     precipChance: rainChance > 0 ? 25 : 0,
     visibilityKm,
-    conditionsSummary: mapWeatherCode(Number(current.weather_code ?? 0)),
+    conditionsSummary,
     latitude,
     longitude,
-    environment: detectEnvironment(latitude, temperature, humidity, mapWeatherCode(Number(current.weather_code ?? 0)))
+    environment: getEnvironment(temperature, humidity, conditionsSummary, latitude, displayName)
   };
 }
 
