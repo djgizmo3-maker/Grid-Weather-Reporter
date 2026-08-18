@@ -1,0 +1,53 @@
+/* Streamlined public stylesheet (copied from root style.css) */
+:root {
+  --bg-1: #070d1a;
+  --bg-2: #0d1424;
+  --bg-3: #1d1f3a;
+  --panel: rgba(15, 22, 36, 0.85);
+  --panel-soft: rgba(18, 31, 48, 0.9);
+  --primary: #e9fefb;
+  --primary-strong: #77e7cf;
+  --accent: #b58dff;
+  --accent-2: #59d0c8;
+  --text: #edf8ff;
+  --text-soft: #dcebf9;
+  --muted: #a3b9cb;
+  --border: rgba(119, 231, 207, 0.18);
+  --success: #59df9b;
+  --shadow: 0 24px 55px rgba(4, 7, 15, 0.62);
+  --toggle-bg: rgba(255, 255, 255, 0.05);
+  --toggle-text: var(--text);
+  --panel-highlight: rgba(255, 255, 255, 0.04);
+}
+
+body.light-mode {
+  --bg-1: #fffaf5;
+  --bg-2: #f7e8d8;
+  --bg-3: #f3d6b6;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-soft: rgba(255, 249, 242, 0.9);
+  --primary: #352117;
+  --primary-strong: #b95b2a;
+  --accent: #c76d41;
+  --accent-2: #d9ab5b;
+  --text: #3d2a22;
+  --text-soft: #5a3f34;
+  --muted: #8c6557;
+  --border: rgba(169, 103, 61, 0.16);
+  --success: #4a9f6d;
+  --shadow: 0 24px 55px rgba(130, 94, 62, 0.15);
+  --toggle-bg: rgba(255, 255, 255, 0.82);
+  --toggle-text: #352117;
+  --panel-highlight: rgba(255, 255, 255, 0.55);
+}
+
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; font-family: "Segoe UI", Tahoma, sans-serif; background: linear-gradient(135deg, var(--bg-1), var(--bg-2) 45%, var(--bg-3)); color:var(--text);} 
+.app-shell { max-width:1180px; margin:0 auto; padding:42px 20px 60px; }
+.topbar { margin-bottom:22px; position:relative; }
+.topbar-row { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.brand-wrap { display:flex; align-items:center; gap:16px; }
+.brand-mark { width:72px; height:72px; border-radius:26px; position:relative; display:grid; place-items:center; background:linear-gradient(135deg, rgba(74,167,177,1), rgba(98,111,175,1)); }
+.weather-form { display:flex; flex-direction:column; gap:12px; }
+.primary-btn { padding:10px 14px; border-radius:10px; background:var(--primary-strong); color:#fff; border:none; cursor:pointer; }
+.report-panel { margin-top:18px; }
