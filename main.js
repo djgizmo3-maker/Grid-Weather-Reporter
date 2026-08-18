@@ -5,38 +5,62 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-function createWindow() {
-  const win = new BrowserWindow({
-    width: 1200,
-    height: 820,
-    minWidth: 980,
-    minHeight: 720,
-    backgroundColor: '#0b1220',
-    title: 'GRID Weather Reporter',
-    icon: path.join(__dirname, 'logo.svg'),
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      spellcheck: false,
-      sandbox: false
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  let mainWindow = null;
+
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
     }
   });
 
-  win.loadFile(path.join(__dirname, 'index.html'));
-}
+  function createWindow() {
+    mainWindow = new BrowserWindow({
+      width: 1200,
+      height: 820,
+      minWidth: 980,
+      minHeight: 720,
+      backgroundColor: '#0b1220',
+      title: 'GRID Weather Reporter',
+      icon: path.join(__dirname, 'logo.svg'),
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        spellcheck: false,
+        sandbox: true
+      }
+    });
 
-app.whenReady().then(() => {
-  createWindow();
+    mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
+    mainWindow.once('ready-to-show', () => {
+      mainWindow.show();
+    });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
   }
-});
+
+  app.whenReady().then(() => {
+    createWindow();
+
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+      }
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
+}
