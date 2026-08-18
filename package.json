@@ -1,0 +1,39 @@
+{
+  "name": "grid-weather-reporter",
+  "version": "1.0.0",
+  "description": "GRID Weather Reporter desktop app",
+  "private": true,
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "electron .",
+    "dist": "electron-builder --win portable",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.gridweatherreporter.app",
+    "productName": "GRID Weather Reporter",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!tests/**",
+      "!dist/**",
+      "!*.log",
+      "!package-lock.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "GRID-Weather-Reporter-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^43.4.0",
+    "electron-builder": "^26.15.3"
+  }
+}

@@ -1,0 +1,49 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="64" y1="44" x2="430" y2="466" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4BB6C0"/>
+      <stop offset="1" stop-color="#6270AF"/>
+    </linearGradient>
+    <linearGradient id="pin" x1="211" y1="215" x2="318" y2="334" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF745F"/>
+      <stop offset="1" stop-color="#D82B2B"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="20" y="20" width="472" height="472" rx="164" fill="url(#bg)"/>
+  <rect x="20" y="20" width="472" height="472" rx="164" fill="url(#bg)" fill-opacity="0.18"/>
+
+  <g opacity="0.98">
+    <circle cx="146" cy="146" r="54" fill="white" fill-opacity="0.95"/>
+    <circle cx="226" cy="112" r="58" fill="white" fill-opacity="0.92"/>
+    <circle cx="298" cy="150" r="60" fill="white" fill-opacity="0.94"/>
+    <circle cx="370" cy="136" r="56" fill="white" fill-opacity="0.88"/>
+    <circle cx="422" cy="174" r="48" fill="white" fill-opacity="0.82"/>
+  </g>
+
+  <g opacity="0.9">
+    <path d="M108 316C108 266.294 148.294 226 198 226H278C324.451 226 362 263.549 362 310V310C362 356.451 324.451 394 278 394H198C148.294 394 108 353.706 108 304V316Z" fill="rgba(255,255,255,0.08)"/>
+  </g>
+
+  <g>
+    <path d="M120 286C120 245.13 153.13 212 194 212H255C295.87 212 329 245.13 329 286V286C329 326.87 295.87 360 255 360H194C153.13 360 120 326.87 120 286V286Z" fill="rgba(255,255,255,0.08)"/>
+    <path d="M111 300C111 255.817 146.817 220 191 220H254C298.183 220 334 255.817 334 300V300C334 344.183 298.183 380 254 380H191C146.817 380 111 344.183 111 300V300Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.14)"/>
+  </g>
+
+  <g>
+    <path d="M282 274C282 232.026 316.026 198 358 198C399.974 198 434 232.026 434 274C434 315.974 399.974 350 358 350C316.026 350 282 315.974 282 274Z" fill="url(#pin)"/>
+    <circle cx="358" cy="274" r="18" fill="rgba(255,255,255,0.9)"/>
+    <path d="M358 350L358 414" stroke="rgba(255,255,255,0.7)" stroke-width="12" stroke-linecap="round"/>
+  </g>
+
+  <g opacity="0.28">
+    <path d="M156 202H344" stroke="rgba(255,255,255,0.9)" stroke-width="2"/>
+    <path d="M156 254H344" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+    <path d="M156 306H344" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+    <path d="M156 358H344" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+    <path d="M166 190V390" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+    <path d="M220 190V390" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+    <path d="M274 190V390" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+    <path d="M328 190V390" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+  </g>
+</svg>
