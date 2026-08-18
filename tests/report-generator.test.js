@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { generateWeatherNarrative, getEnvironment, normalizeLocation } from '../src/report-generator.js';
+import { generateWeatherNarrative, getEnvironment, normalizeLocation, windRangeText } from '../src/report-generator.js';
 
 test('generateWeatherNarrative uses desert wording for hot dry conditions', () => {
   const weather = {
@@ -69,3 +69,11 @@ test('normalizeLocation accepts grid coordinates and city-state strings', () => 
   assert.deepEqual(normalizeLocation('Phoenix, AZ'), { type: 'city-state', city: 'Phoenix', state: 'AZ' });
   assert.deepEqual(normalizeLocation('  Denver , CO '), { type: 'city-state', city: 'Denver', state: 'CO' });
 });
+
+test('windRangeText accurately formats light and moderate wind speeds', () => {
+  assert.equal(windRangeText(8), '3–8 mph');
+  assert.equal(windRangeText(25), '9–17 mph');
+  assert.equal(windRangeText(40), '18–24 mph');
+  assert.equal(windRangeText(50), '20–30 mph');
+});
+

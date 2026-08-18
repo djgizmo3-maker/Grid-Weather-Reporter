@@ -72,7 +72,7 @@ function getEnvironment(tempC, humidity, conditionsSummary, latitude = null, loc
 
 function windRangeText(speedKph) {
   const mph = Math.round(speedKph * 0.621371);
-  if (mph <= 10) return '9–17 mph';
+  if (mph <= 10) return '3–8 mph';
   if (mph <= 20) return '9–17 mph';
   if (mph <= 30) return '18–24 mph';
   return '20–30 mph';
@@ -142,4 +142,4 @@ function formatTemperatureRange(lowF) {
   return lowerBound + '-' + upperBound + '°F';
 }
 
-export { generateWeatherNarrative, getEnvironment, normalizeLocation };
+export { generateWeatherNarrative, getEnvironment, normalizeLocation, windRangeText };
