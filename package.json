@@ -6,6 +6,7 @@
   "main": "main.js",
   "type": "module",
   "scripts": {
+    "dev": "electron .",
     "test": "node --test",
     "start": "electron .",
     "dist": "electron-builder --win portable",
