@@ -27,7 +27,7 @@ if (!gotTheLock) {
       minHeight: 720,
       backgroundColor: '#0b1220',
       title: 'GRID Weather Reporter',
-      icon: path.join(__dirname, 'logo.svg'),
+      icon: path.join(__dirname, 'build', 'icon.png'),
       show: false,
       webPreferences: {
         contextIsolation: true,

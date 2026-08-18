@@ -27,10 +27,17 @@
     ],
     "win": {
       "target": [
-        "portable"
+        "nsis"
       ],
       "icon": "build/icon.png",
-      "artifactName": "GRID-Weather-Reporter-${version}.${ext}"
+      "artifactName": "GRID-Weather-Reporter-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GRID Weather Reporter"
     }
   },
   "devDependencies": {
