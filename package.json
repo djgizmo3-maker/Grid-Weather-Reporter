@@ -1,6 +1,6 @@
 {
   "name": "grid-weather-reporter",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "GRID Weather Reporter desktop app",
   "private": true,
   "main": "main.js",
