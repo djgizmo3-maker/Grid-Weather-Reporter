@@ -26,6 +26,55 @@ function cToF(celsius) {
   return (celsius * 9) / 5 + 32;
 }
 
+function formatLocalTimestamp(timestamp, timeZone) {
+  const date = new Date(timestamp);
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error('A valid timestamp is required.');
+  }
+  if (typeof timeZone !== 'string' || !timeZone.trim()) {
+    throw new Error('A valid location time zone is required.');
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+    hourCycle: 'h23'
+  }).format(date);
+}
+
+function getReportPeriodForTimeZone(timestamp, timeZone) {
+  const date = new Date(timestamp);
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error('A valid timestamp is required.');
+  }
+  if (typeof timeZone !== 'string' || !timeZone.trim()) {
+    throw new Error('A valid location time zone is required.');
+  }
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: 'numeric',
+    minute: 'numeric',
+    hourCycle: 'h23'
+  }).formatToParts(date);
+  const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+  const minute = Number(parts.find((part) => part.type === 'minute')?.value);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+    throw new Error('Unable to determine the local report time.');
+  }
+
+  const minutesSinceMidnight = (hour * 60) + minute;
+  return minutesSinceMidnight >= (4 * 60 + 30) && minutesSinceMidnight < (16 * 60 + 30)
+    ? 'day'
+    : 'night';
+}
+
 function getWindDirectionLabel(degrees) {
   const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const index = Math.round((((degrees % 360) + 360) % 360) / 45) % directions.length;
@@ -79,63 +128,69 @@ function windRangeText(speedKph) {
 }
 
 function generateWeatherNarrative(weather) {
+  if (typeof weather.forecastNarrative === 'string' && weather.forecastNarrative.trim()) {
+    return weather.forecastNarrative.trim();
+  }
+
   const tempF = Math.round(cToF(weather.tempC));
   const highF = Math.round(cToF(weather.highC));
   const lowF = Math.round(cToF(weather.lowC));
-  const humidity = weather.humidity ?? 0;
+  const humidity = Number.isFinite(weather.humidity) ? Math.round(weather.humidity) : null;
+  const windMph = Number.isFinite(weather.windSpeedKph) ? Math.round(weather.windSpeedKph * 0.621371) : null;
   const windDirection = getWindDirectionLabel(weather.windDirection ?? 0);
-  const environment = weather.environment || getEnvironment(weather.tempC, humidity, weather.conditionsSummary || 'clear', weather.latitude, weather.location);
   const shiftLabel = weather.reportPeriod === 'day' ? 'daytime' : weather.reportPeriod === 'night' ? 'nighttime' : 'upcoming';
-  const periodTemperatureText = 'Temperatures during this shit is forecasted to range from ' + lowF + '°F to ' + highF + '°F. ';
+  const conditions = String(weather.conditionsSummary || 'weather conditions unavailable').trim();
+  const sentences = [
+    `The forecast calls for ${conditions} during the ${shiftLabel} 12-hour period.`,
+    `Temperatures are forecast to range from ${lowF}°F to ${highF}°F, with an average near ${tempF}°F.`
+  ];
 
-  let body = '';
-
-  if (environment === 'desert') {
-    body = 'Conditions are expected to remain clear and dry throughout the ' + shiftLabel + ' shift, with no precipitation anticipated. ' +
-      'Current ambient air temperature at the start of the shift is ' + tempF + '°F, based on live regional sensor readings. ' +
-      periodTemperatureText +
-      'Winds remain steady from the ' + windDirection + ', averaging ' + windRangeText(weather.windSpeedKph) + ' with occasional lighter periods. ' +
-      'Humidity stays between ' + formatHumidityRange(humidity - 8, humidity + 6) + '. ' +
-      'Visibility remains excellent for the duration, with no fog, airborne obstructions, or cloud cover affecting patrol operations.';
+  if (Number.isFinite(weather.precipChance)) {
+    sentences.push(`The highest forecast chance of precipitation is ${Math.round(weather.precipChance)}%.`);
   }
 
-  if (environment === 'humid') {
-    body = 'Conditions are expected to remain warm and humid throughout the ' + shiftLabel + ' shift, with no significant precipitation anticipated. ' +
-      'Current ambient air temperature at the start of the shift is ' + tempF + '°F, based on live regional sensor readings. ' +
-      periodTemperatureText +
-      'Winds remain steady from the ' + windDirection + ', averaging ' + windRangeText(weather.windSpeedKph) + ' with occasional lighter periods. ' +
-      'Humidity stays between ' + formatHumidityRange(Math.max(40, humidity - 8), humidity + 12) + '. ' +
-      'Visibility remains excellent for the duration, with no fog, airborne obstructions, or cloud cover affecting patrol operations.';
+  if (windMph !== null) {
+    sentences.push(windMph <= 0
+      ? 'Winds are forecast to be calm or light and variable.'
+      : `Winds are forecast from the ${windDirection} at an average of ${windMph} mph.`);
   }
 
-  if (environment === 'wet') {
-    body = 'Conditions are expected to remain unsettled throughout the ' + shiftLabel + ' shift, with periodic precipitation likely. ' +
-      'Current ambient air temperature at the start of the shift is ' + tempF + '°F, based on live regional sensor readings. ' +
-      periodTemperatureText +
-      'Winds remain steady from the ' + windDirection + ', averaging ' + windRangeText(weather.windSpeedKph) + ' with occasional lighter periods. ' +
-      'Humidity stays between ' + formatHumidityRange(humidity - 10, humidity + 12) + '. ' +
-      'Visibility may be reduced by cloud cover or light precipitation during the shift.';
+  if (humidity !== null) {
+    sentences.push(`Forecast relative humidity averages ${humidity}%.`);
   }
 
-  if (environment === 'cold') {
-    body = 'Conditions are expected to remain cold and stable throughout the ' + shiftLabel + ' shift, with no significant precipitation anticipated. ' +
-      'Current ambient air temperature at the start of the shift is ' + tempF + '°F, based on live regional sensor readings. ' +
-      periodTemperatureText +
-      'Winds remain steady from the ' + windDirection + ', averaging ' + windRangeText(weather.windSpeedKph) + ' with occasional lighter periods. ' +
-      'Humidity stays between ' + formatHumidityRange(Math.max(30, humidity - 5), humidity + 10) + '. ' +
-      'Visibility remains acceptable for the duration, with no major obstructions affecting patrol operations.';
+  if (Number.isFinite(weather.visibilityKm)) {
+    sentences.push(`Forecast visibility averages ${(weather.visibilityKm * 0.621371).toFixed(1)} miles.`);
   }
 
-  if (environment === 'general') {
-    body = 'Conditions are expected to remain generally stable throughout the ' + shiftLabel + ' shift, with no significant weather disruptions anticipated. ' +
-      'Current ambient air temperature at the start of the shift is ' + tempF + '°F, based on live regional sensor readings. ' +
-      periodTemperatureText +
-      'Winds remain steady from the ' + windDirection + ', averaging ' + windRangeText(weather.windSpeedKph) + ' with occasional lighter periods. ' +
-      'Humidity stays between ' + formatHumidityRange(Math.max(25, humidity - 10), humidity + 12) + '. ' +
-      'Visibility remains good for the duration, with no major obstructions affecting patrol operations.';
+  return sentences.join(' ');
+}
+
+function buildNoaaForecastNarrative(periods, generatedAt = new Date()) {
+  const startTime = generatedAt instanceof Date ? generatedAt.getTime() : new Date(generatedAt).getTime();
+  if (!Number.isFinite(startTime)) {
+    throw new Error('A valid report generation time is required.');
   }
 
-  return body;
+  const endTime = startTime + (12 * 60 * 60 * 1000);
+  const overlappingPeriods = (Array.isArray(periods) ? periods : []).filter((period) => {
+    const periodStart = Date.parse(period?.startTime || '');
+    const periodEnd = Date.parse(period?.endTime || '');
+    return Number.isFinite(periodStart) &&
+      Number.isFinite(periodEnd) &&
+      periodEnd > startTime &&
+      periodStart < endTime &&
+      typeof period?.detailedForecast === 'string' &&
+      period.detailedForecast.trim();
+  });
+
+  if (!overlappingPeriods.length) {
+    throw new Error('NOAA detailed forecast text is unavailable for the next 12 hours.');
+  }
+
+  return overlappingPeriods
+    .map((period) => `${period.name || 'Forecast period'}: ${period.detailedForecast.trim()}`)
+    .join(' ');
 }
 
 function getDetailedWindDirectionLabel(degrees) {
@@ -194,10 +249,4 @@ function generateNoaaReport(weather) {
   return rows.join('\n');
 }
 
-function formatHumidityRange(lowHumidity, highHumidity) {
-  const low = Math.max(0, Math.round(Math.min(lowHumidity, highHumidity)));
-  const high = Math.min(100, Math.round(Math.max(lowHumidity, highHumidity)));
-  return low + '-' + high + '%';
-}
-
-export { generateNoaaReport, generateWeatherNarrative, getEnvironment, normalizeLocation, windRangeText };
+export { buildNoaaForecastNarrative, formatLocalTimestamp, generateNoaaReport, generateWeatherNarrative, getEnvironment, getReportPeriodForTimeZone, normalizeLocation, windRangeText };

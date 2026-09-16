@@ -1,4 +1,4 @@
-import { generateNoaaReport, generateWeatherNarrative, getEnvironment, normalizeLocation } from './src/report-generator.js';
+import { buildNoaaForecastNarrative, formatLocalTimestamp, generateNoaaReport, generateWeatherNarrative, getEnvironment, getReportPeriodForTimeZone, normalizeLocation } from './src/report-generator.js';
 
 const form = document.querySelector('#weather-form');
 const locationInput = document.querySelector('#location-input');
@@ -60,7 +60,11 @@ function updateReport(text) {
 function buildReportHeader(weather) {
   const dailyHighF = Math.round((weather.dailyHighC * 9) / 5 + 32);
   const dailyLowF = Math.round((weather.dailyLowC * 9) / 5 + 32);
-  return `${weather.reportPeriodLabel} 12-Hour Weather Forecast Report\nLocation: ${weather.location}\nSource: ${weather.source}\nDaily High: ${dailyHighF}°F\nDaily Low: ${dailyLowF}°F\n\n`;
+  const pulledAt = formatLocalTimestamp(weather.reportPulledAt, weather.timeZone);
+  const updatedAt = weather.forecastUpdatedAt
+    ? `\nForecast Updated: ${formatLocalTimestamp(weather.forecastUpdatedAt, weather.timeZone)}`
+    : '';
+  return `${weather.reportPeriodLabel} 12-Hour Weather Forecast Report\nLocation: ${weather.location}\nSource: ${weather.source}\nReport Pulled: ${pulledAt}${updatedAt}\nDaily High: ${dailyHighF}°F\nDaily Low: ${dailyLowF}°F\n\n`;
 }
 
 function renderReport(weather) {
@@ -128,13 +132,6 @@ function mapWeatherCode(code) {
   };
 
   return mapping[code] || 'clear conditions';
-}
-
-function getReportPeriodFromGenerationTime(generatedAt = new Date()) {
-  const minutesSinceMidnight = generatedAt.getHours() * 60 + generatedAt.getMinutes();
-  const daytimeStartMinutes = 4 * 60 + 30;
-  const nighttimeStartMinutes = 16 * 60 + 30;
-  return minutesSinceMidnight >= daytimeStartMinutes && minutesSinceMidnight < nighttimeStartMinutes ? 'day' : 'night';
 }
 
 function getReportPeriodLabel(reportPeriod) {
@@ -358,7 +355,7 @@ function buildNoaa12HourForecastSummary(hourlyPeriods) {
     lowC: fToC(Math.min(...temperatureF)),
     highC: fToC(Math.max(...temperatureF)),
     precipChance: precipitationValues.length ? Math.max(...precipitationValues) : 0,
-    visibilityKm: 10,
+    visibilityKm: null,
     conditionsSummary: selectDominantText(conditions)
   };
 }
@@ -432,21 +429,38 @@ async function fetchNoaaWeatherForLocation(latitude, longitude, displayName) {
 
   const pointsData = await pointsResponse.json();
   const hourlyUrl = pointsData?.properties?.forecastHourly;
-  if (!hourlyUrl) {
-    throw new Error('NOAA did not return an hourly forecast endpoint.');
+  const forecastUrl = pointsData?.properties?.forecast;
+  if (!hourlyUrl || !forecastUrl) {
+    throw new Error('NOAA did not return the required forecast endpoints.');
   }
 
-  const hourlyResponse = await fetch(hourlyUrl, { headers: noaaHeaders });
+  const [hourlyResponse, forecastResponse] = await Promise.all([
+    fetch(hourlyUrl, { headers: noaaHeaders }),
+    fetch(forecastUrl, { headers: noaaHeaders })
+  ]);
   if (!hourlyResponse.ok) {
     throw new Error(`NOAA hourly forecast request failed (${hourlyResponse.status}).`);
   }
+  if (!forecastResponse.ok) {
+    throw new Error(`NOAA detailed forecast request failed (${forecastResponse.status}).`);
+  }
 
-  const hourlyData = await hourlyResponse.json();
+  const [hourlyData, forecastData] = await Promise.all([
+    hourlyResponse.json(),
+    forecastResponse.json()
+  ]);
   const hourlyPeriods = Array.isArray(hourlyData?.properties?.periods) ? hourlyData.properties.periods : [];
+  const forecastPeriods = Array.isArray(forecastData?.properties?.periods) ? forecastData.properties.periods : [];
   const forecastSummary = buildNoaa12HourForecastSummary(hourlyPeriods);
   const dailySummary = buildNoaaDailyTemperatureSummary(hourlyPeriods);
-  const reportPeriod = getReportPeriodFromGenerationTime();
   const conditionsSummary = forecastSummary.conditionsSummary;
+  const timeZone = pointsData?.properties?.timeZone;
+  if (!timeZone) {
+    throw new Error('NOAA did not return the location time zone.');
+  }
+  const reportPulledAt = new Date().toISOString();
+  const reportPeriod = getReportPeriodForTimeZone(reportPulledAt, timeZone);
+  const forecastNarrative = buildNoaaForecastNarrative(forecastPeriods, reportPulledAt);
 
   return {
     location: displayName,
@@ -463,11 +477,15 @@ async function fetchNoaaWeatherForLocation(latitude, longitude, displayName) {
     precipChance: forecastSummary.precipChance,
     visibilityKm: forecastSummary.visibilityKm,
     conditionsSummary,
+    forecastNarrative,
+    forecastUpdatedAt: forecastData?.properties?.updateTime || forecastData?.properties?.generatedAt || null,
+    reportPulledAt,
+    timeZone,
     latitude,
     longitude,
     reportPeriod,
     reportPeriodLabel: getReportPeriodLabel(reportPeriod),
-    source: 'NOAA',
+    source: 'NOAA / National Weather Service',
     environment: getEnvironment(forecastSummary.tempC, forecastSummary.humidity, conditionsSummary, latitude, displayName)
   };
 }
@@ -481,10 +499,14 @@ async function fetchOpenMeteoWeatherForLocation(latitude, longitude, displayName
   }
 
   const data = await response.json();
-  const reportPeriod = getReportPeriodFromGenerationTime();
   const forecastSummary = build12HourForecastSummary(data);
   const dailySummary = buildDailyTemperatureSummary(data);
   const conditionsSummary = forecastSummary.conditionsSummary;
+  if (!data.timezone) {
+    throw new Error('Weather service did not return the location time zone.');
+  }
+  const reportPulledAt = new Date().toISOString();
+  const reportPeriod = getReportPeriodForTimeZone(reportPulledAt, data.timezone);
 
   return {
     location: displayName,
@@ -501,6 +523,8 @@ async function fetchOpenMeteoWeatherForLocation(latitude, longitude, displayName
     precipChance: forecastSummary.precipChance,
     visibilityKm: forecastSummary.visibilityKm,
     conditionsSummary,
+    reportPulledAt,
+    timeZone: data.timezone,
     latitude,
     longitude,
     reportPeriod,
